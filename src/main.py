@@ -1,4 +1,4 @@
-from Posting import Posting
+from posting import Posting
 
 
 def run():
