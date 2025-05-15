@@ -1,6 +1,6 @@
 from inverted_index import InvertedIndex
 
-CORPUS_PATH = "/DEV"
+CORPUS_PATH = "DEV"
 
 
 def run():
