@@ -1,8 +1,17 @@
 """
-Posting.py holds a Posting class which represents an inverted index posting
+posting.py contains a Posting class which represents an inverted index posting
 """
 
-class Posting():
-    def __init__(self, document_name, term_frequency):
-        self.document_name = document_name
-        self.term_frequency = term_frequency
+class Posting:
+    def __init__(self, documentID, term_frequency):
+        self._documentID = documentID
+        self._term_frequency = term_frequency
+
+    def getDocID(self) -> str:
+        return self._documentID
+
+    def getTermFrequency(self) -> str:
+        return self._term_frequency
+
+    def incrementTermFrequency(self) -> None:
+        self._term_frequency += 1
