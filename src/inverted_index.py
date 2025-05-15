@@ -2,7 +2,7 @@
 inverted_index.py contains the InvertedIndex data structure
 """
 from pathlib import Path
-from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
+from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning, MarkupResemblesLocatorWarning
 import warnings
 from tokenizer import tokenize, compute_word_frequencies
 from posting import Posting
@@ -12,11 +12,15 @@ import json
 class InvertedIndex:
     def __init__(self):
         self._buffer = {}
+        self._docID_map = {}
         self._num_unique_tokens = 0
         self._num_documents = 0
     
     def getInvertedIndex(self):
         return self._buffer
+    
+    def getDocIDMap(self):
+        return self._docID_map
     
     def getNumUniqueTokens(self):
         return self._num_unique_tokens
@@ -48,6 +52,7 @@ class InvertedIndex:
         calculating how frequently they occur in the file.
         """
         warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
+        warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
         soup = BeautifulSoup(file_contents, 'lxml')
         content = soup.get_text()
         token_list = tokenize(content)
@@ -64,7 +69,8 @@ class InvertedIndex:
             with open(path_to_file, 'r') as file:
                 json_file = json.load(file)
                 file_contents = json_file["content"]
-                document_id = json_file["url"]
+                document_id = self.getNumDocuments() + 1
+                self._docID_map[document_id] = json_file["url"]
 
                 # Increments the "unique documents found" counter and parses contents
                 self.incrementDocuments()
@@ -114,4 +120,7 @@ class InvertedIndex:
         
         counter = 0
         for subdomain in subdomains_iterable:
+            if counter > 8: break
+            print("Subdomain name:", subdomain)
             self.parse_subdomain(subdomain)
+            counter += 1
