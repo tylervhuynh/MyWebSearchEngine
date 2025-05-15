@@ -12,6 +12,3 @@ class Posting:
 
     def getTermFrequency(self) -> str:
         return self._term_frequency
-
-    def incrementTermFrequency(self) -> None:
-        self._term_frequency += 1

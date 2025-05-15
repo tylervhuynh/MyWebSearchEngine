@@ -2,6 +2,10 @@
 inverted_index.py contains the InvertedIndex data structure
 """
 from pathlib import Path
+from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
+import warnings
+from tokenizer import tokenize, compute_word_frequencies
+from posting import Posting
 import json
 
 
@@ -26,18 +30,51 @@ class InvertedIndex:
     def incrementDocuments(self):
         self._num_documents += 1
     
+    def add_posting(self, token, frequency, document_id):
+        """
+        Creates a new Posting object out of the token, frequency, and document ID
+        and adds it to the inverted index
+        """
+        new_posting = Posting(document_id, frequency)
+        if token in self._buffer.keys():
+            self._buffer[token].append(new_posting)
+        else:
+            self.incrementUniqueTokens()
+            self._buffer[token] = [new_posting]
+    
+    def parse_content(self, file_contents: str, document_id: str) -> None:
+        """
+        Parses the text of the HTML file contents, tokenizing all words and
+        calculating how frequently they occur in the file.
+        """
+        warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
+        soup = BeautifulSoup(file_contents, 'lxml')
+        content = soup.get_text()
+        token_list = tokenize(content)
+        token_frequencies = compute_word_frequencies(token_list)
+        for token, frequency in token_frequencies.items():
+            self.add_posting(token, frequency, document_id)
+
     def parse_file(self, path_to_file: str) -> None:
+        """
+        Parses the given .json file by opening it and parsing its content
+        """
         try:
+            # Opens .json file and loads the contents, essentially accessing the webpage
             with open(path_to_file, 'r') as file:
                 json_file = json.load(file)
                 file_contents = json_file["content"]
-                self.parse_contents(file_contents)
-        except json.JSONDecodeError as e:
-            print(f"Failed to parse {path_to_file}: {e}")
+                document_id = json_file["url"]
+
+                # Increments the "unique documents found" counter and parses contents
+                self.incrementDocuments()
+                self.parse_content(file_contents, document_id)
         except FileNotFoundError:
             print(f"Error: The file {path_to_file} was not found.")
         except PermissionError:
             print(f"Error: You do not have permission to read {path_to_file}.")
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse {path_to_file}: {e}")
     
     def parse_subdomain(self, path_to_subdomain: Path) -> None:
         """
@@ -45,9 +82,12 @@ class InvertedIndex:
         the parse_file() method
         """
         subdomain_path = Path(path_to_subdomain)
+        
+        # Instantly returns if subdomain path is not a valid directory
         if not subdomain_path.is_dir():
             return
 
+        # Iterates through the subdomain's webpages, parsing it's files
         webpages_iterable = subdomain_path.iterdir()
         for webpage in webpages_iterable:
             if webpage.is_file():
@@ -64,9 +104,14 @@ class InvertedIndex:
         "encoding" : an indication of the encoding of the webpage
         """
         directory_path = Path(path_to_corpus)
+
+        # Instant return if the path is not a valid directory
         if not directory_path.is_dir():
             return
 
+        # Iterates through every subdomain in the directory
         subdomains_iterable = directory_path.iterdir()
+        
+        counter = 0
         for subdomain in subdomains_iterable:
             self.parse_subdomain(subdomain)
