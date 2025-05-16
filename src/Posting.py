@@ -16,3 +16,6 @@ class Posting:
     
     def getPosition(self) -> int:
         return self._position
+    
+    def to_dict(self):
+        return {"document_ID": self._documentID, "term_frequency": self._term_frequency}

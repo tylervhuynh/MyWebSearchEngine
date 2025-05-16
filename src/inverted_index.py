@@ -16,6 +16,7 @@ class InvertedIndex:
         self._docID_map = {}
         self._num_unique_tokens = 0
         self._num_documents = 0
+        self._num_dumps = 0
     
     def getInvertedIndex(self):
         return self._buffer
@@ -29,11 +30,23 @@ class InvertedIndex:
     def getNumDocuments(self):
         return self._num_documents
     
+    def getNumDumps(self):
+        return self._num_dumps
+    
     def incrementUniqueTokens(self):
         self._num_unique_tokens += 1
     
     def incrementDocuments(self):
         self._num_documents += 1
+    
+    def dumpPartialIndex(self):
+        self._num_dumps += 1
+        serializable_buffer = {}
+        for term, postings in self._buffer.items():
+            serializable_buffer[term] = [posting.to_dict() for posting in postings]
+        with open(f"partial_index{self._num_dumps}.json", 'w') as partial_index:
+            json.dump(serializable_buffer, partial_index)
+            self._buffer.clear() # Clears out buffer after having stored its contents
     
     def add_posting(self, token, frequency, document_id):
         """
@@ -62,6 +75,10 @@ class InvertedIndex:
         token_frequencies = compute_word_frequencies(stemmed_tokens)
         for token, frequency in token_frequencies.items():
             self.add_posting(token, frequency, document_id)
+
+        # Determines if a partial index must be stored on disk
+        if self.getNumDocuments() % 15000 == 0:
+            self.dumpPartialIndex()
 
     def parse_file(self, path_to_file: str) -> None:
         """
@@ -120,10 +137,8 @@ class InvertedIndex:
 
         # Iterates through every subdomain in the directory
         subdomains_iterable = directory_path.iterdir()
-        
-        # counter = 0
+
         for subdomain in subdomains_iterable:
-            # if counter > 6: break
-            # print("Subdomain name:", subdomain)
             self.parse_subdomain(subdomain)
-            # counter += 1
+
+        self.dumpPartialIndex()
