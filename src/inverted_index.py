@@ -4,6 +4,7 @@ inverted_index.py contains the InvertedIndex data structure
 from pathlib import Path
 from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning, MarkupResemblesLocatorWarning
 import warnings
+from nltk.stem import PorterStemmer
 from tokenizer import tokenize, compute_word_frequencies
 from posting import Posting
 import json
@@ -56,7 +57,9 @@ class InvertedIndex:
         soup = BeautifulSoup(file_contents, 'lxml')
         content = soup.get_text()
         token_list = tokenize(content)
-        token_frequencies = compute_word_frequencies(token_list)
+        stemmer = PorterStemmer()
+        stemmed_tokens = [stemmer.stem(token) for token in token_list]
+        token_frequencies = compute_word_frequencies(stemmed_tokens)
         for token, frequency in token_frequencies.items():
             self.add_posting(token, frequency, document_id)
 
@@ -118,9 +121,9 @@ class InvertedIndex:
         # Iterates through every subdomain in the directory
         subdomains_iterable = directory_path.iterdir()
         
-        counter = 0
+        # counter = 0
         for subdomain in subdomains_iterable:
-            if counter > 8: break
-            print("Subdomain name:", subdomain)
+            # if counter > 6: break
+            # print("Subdomain name:", subdomain)
             self.parse_subdomain(subdomain)
-            counter += 1
+            # counter += 1
