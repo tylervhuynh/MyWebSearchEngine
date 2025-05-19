@@ -5,7 +5,7 @@ from pathlib import Path
 from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning, MarkupResemblesLocatorWarning
 import warnings
 from nltk.stem import PorterStemmer
-from tokenizer import tokenize, compute_word_frequencies
+from tokenizer import tokenize, compute_word_frequencies, is_near_duplicate, number_of_intersections
 from posting import Posting
 import json
 
@@ -60,7 +60,7 @@ class InvertedIndex:
             self.incrementUniqueTokens()
             self._buffer[token] = [new_posting]
     
-    def parse_content(self, file_contents: str, document_id: str) -> None:
+    def parse_content(self, file_contents: str, document_id: str, text_cache: set, token_cache: list) -> None:
         """
         Parses the text of the HTML file contents, tokenizing all words and
         calculating how frequently they occur in the file.
@@ -69,6 +69,29 @@ class InvertedIndex:
         warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
         soup = BeautifulSoup(file_contents, 'lxml')
         content = soup.get_text()
+
+        # Filtering for low/high information (<10 words or >1000000)
+        word_count = len(content)
+        if word_count < 10 or word_count > 100000:
+            return
+
+        # Filters exact duplicates
+        if content not in text_cache:
+            text_cache.add(content)
+            if len(text_cache) > 20: # Limit cache size
+                text_cache.pop()
+        else:
+            return
+
+        # Filters near duplicates
+        frequencies = compute_word_frequencies(content)
+        if is_near_duplicate(frequencies, token_cache):
+            return  # Too similar to a recent page
+        token_cache.append(frequencies)
+        if len(token_cache) > 20: # Limit cache size
+            token_cache.pop(0)
+
+        # Tokenizing
         token_list = tokenize(content)
         stemmer = PorterStemmer()
         stemmed_tokens = [stemmer.stem(token) for token in token_list]
@@ -80,7 +103,7 @@ class InvertedIndex:
         if self.getNumDocuments() % 15000 == 0:
             self.dumpPartialIndex()
 
-    def parse_file(self, path_to_file: str) -> None:
+    def parse_file(self, path_to_file: str, text_cache: set, token_cache: list) -> None:
         """
         Parses the given .json file by opening it and parsing its content
         """
@@ -94,7 +117,7 @@ class InvertedIndex:
 
                 # Increments the "unique documents found" counter and parses contents
                 self.incrementDocuments()
-                self.parse_content(file_contents, document_id)
+                self.parse_content(file_contents, document_id, text_cache, token_cache)
         except FileNotFoundError:
             print(f"Error: The file {path_to_file} was not found.")
         except PermissionError:
@@ -102,7 +125,7 @@ class InvertedIndex:
         except json.JSONDecodeError as e:
             print(f"Failed to parse {path_to_file}: {e}")
     
-    def parse_subdomain(self, path_to_subdomain: Path) -> None:
+    def parse_subdomain(self, path_to_subdomain: Path, text_cache: set, token_cache: list) -> None:
         """
         Parses the input subdomain directory by passing each webpage file into
         the parse_file() method
@@ -117,7 +140,7 @@ class InvertedIndex:
         webpages_iterable = subdomain_path.iterdir()
         for webpage in webpages_iterable:
             if webpage.is_file():
-                self.parse_file(str(webpage))
+                self.parse_file(str(webpage), text_cache, token_cache)
     
     def create_index(self, path_to_corpus: str) -> None:
         """
@@ -138,7 +161,13 @@ class InvertedIndex:
         # Iterates through every subdomain in the directory
         subdomains_iterable = directory_path.iterdir()
 
+        text_cache = set()
+        token_cache = []
+        # count = 0
         for subdomain in subdomains_iterable:
-            self.parse_subdomain(subdomain)
+            # if count > 6: break
+            # print(subdomain)
+            self.parse_subdomain(subdomain, text_cache, token_cache)
+            # count += 1
 
         self.dumpPartialIndex()
