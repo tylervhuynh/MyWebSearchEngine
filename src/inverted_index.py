@@ -2,10 +2,11 @@
 inverted_index.py contains the InvertedIndex data structure
 """
 from pathlib import Path
+from os import listdir, rename, remove
 from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning, MarkupResemblesLocatorWarning
 import warnings
 from nltk.stem import PorterStemmer
-from tokenizer import tokenize, compute_word_frequencies, is_near_duplicate, number_of_intersections
+from tokenizer import tokenize, compute_word_frequencies, is_near_duplicate
 from posting import Posting
 import json
 
@@ -39,16 +40,98 @@ class InvertedIndex:
     def incrementDocuments(self):
         self._num_documents += 1
     
-    def dumpPartialIndex(self):
+    def merge_two_indices(self, file1, file2, output_file):
+        """
+        Merges two partial index JSON files and writes the merged result to output_file.
+        """
+        with open(file1, 'r') as file1:
+            with open(file2, 'r') as file2:
+                index1_dict = json.load(file1)
+                index2_dict = json.load(file2)
+
+        index1 = list(index1_dict.items())
+        index2 = list(index2_dict.items())
+        merged_index = {}
+        i = 0
+        j = 0
+
+        while i < len(index1) and j < len(index2):
+            token1, postings1 = index1[i]
+            token2, postings2 = index2[j]
+            if token1 == token2:
+                # Merges the posting lists
+                merged_postings = postings1 + postings2
+                merged_index[token1] = merged_postings
+                i += 1
+                j += 1
+            elif token1 < token2:
+                merged_index[token1] = postings1
+                i += 1
+            else:
+                merged_index[token2] = postings2
+                j += 1
+
+        # Add remaining items in index1
+        while i < len(index1):
+            token1, postings1 = index1[i]
+            merged_index[token1] = postings1
+            i += 1
+
+        # Add remaining items in index2
+        while j < len(index2):
+            token2, postings2 = index2[j]
+            merged_index[token2] = postings2
+            j += 1
+
+        with open(output_file, 'w') as outputFile:
+            # CAN ADD RANGES HERE LATER USING A FOR LOOP TO CREATE AND DUMP
+            # MULTIPLE DIFFERENT SUB-INDICIES
+            # merged_index_items = merged_index.items()
+            # for token, postings in merged_index_items:
+            #     if token.startswith("a"):
+            #         a[token] = postings
+            json.dump(merged_index, outputFile)
+
+    def mergePartialIndices(self) -> None:
+        """
+        Merges all of the partial index files, two at a time
+        """
+        partial_indicies = []
+        for filename in listdir():
+            if filename.startswith("partial_index") and filename.endswith(".json"):
+                partial_indicies.append(filename)
+        partial_indicies.sort()
+
+        temp_index_count = 0
+        while len(partial_indicies) > 1:
+            index1 = partial_indicies.pop(0)
+            index2 = partial_indicies.pop(0)
+
+            merged_filename = f"temp_merged{temp_index_count}.json"
+            self.merge_two_indices(index1, index2, merged_filename)
+            temp_index_count += 1
+
+            remove(index1)
+            remove(index2)
+
+            partial_indicies.append(merged_filename)
+            partial_indicies.sort()
+
+        # Renames the final merged file
+        if partial_indicies:
+            rename(partial_indicies[0], "full_inverted_index.json")
+    
+    def dumpPartialIndex(self) -> None:
         self._num_dumps += 1
+        sorted_dict = dict(sorted(self._buffer.items()))
         serializable_buffer = {}
-        for term, postings in self._buffer.items():
+        for term, postings in sorted_dict.items():
             serializable_buffer[term] = [posting.to_dict() for posting in postings]
         with open(f"partial_index{self._num_dumps}.json", 'w') as partial_index:
             json.dump(serializable_buffer, partial_index)
             self._buffer.clear() # Clears out buffer after having stored its contents
     
-    def add_posting(self, token, frequency, document_id):
+    def add_posting(self, token: str, frequency: int, document_id: int) -> None:
         """
         Creates a new Posting object out of the token, frequency, and document ID
         and adds it to the inverted index
@@ -100,7 +183,7 @@ class InvertedIndex:
             self.add_posting(token, frequency, document_id)
 
         # Determines if a partial index must be stored on disk
-        if self.getNumDocuments() % 15000 == 0:
+        if self.getNumDocuments() % 27000 == 0:
             self.dumpPartialIndex()
 
     def parse_file(self, path_to_file: str, text_cache: set, token_cache: list) -> None:
@@ -170,4 +253,6 @@ class InvertedIndex:
             self.parse_subdomain(subdomain, text_cache, token_cache)
             # count += 1
 
-        self.dumpPartialIndex()
+        self.dumpPartialIndex() # Puts the remainder of the inverted index into a new file
+
+        self.mergePartialIndices() # Merges all partial index files

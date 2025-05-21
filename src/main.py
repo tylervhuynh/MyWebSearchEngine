@@ -15,7 +15,7 @@ def generate_report(inverted_index: InvertedIndex) -> None:
 
         index_byte_count = 0
         for i in range(0, inverted_index.getNumDumps()):
-            file_path = Path(f"partial_index{i + 1}.json")
+            file_path = Path(f"full_inverted_index.json")
             if file_path.exists():
                 index_byte_count += file_path.stat().st_size
         report_file.write(f"Index size on disk: {str(index_byte_count / 1024)} KB ({str(index_byte_count)} bytes)\n")
