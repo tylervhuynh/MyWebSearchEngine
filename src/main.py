@@ -11,7 +11,7 @@ def generate_report(inverted_index: InvertedIndex, length: float) -> None:
     """
     with open("report.txt", 'w', encoding="UTF-8") as report_file:
         report_file.write("Inverted Index indexing report:\n\n")
-        report_file.write("Index creation took " + str(length) + "seconds\n")
+        report_file.write("Index creation took " + str(length) + " seconds\n")
         report_file.write("Number of indexed documents: " + str(inverted_index.getNumDocuments()) + '\n\n')
         report_file.write("Number of unique tokens: " + str(inverted_index.getNumUniqueTokens()) + '\n\n')
 
@@ -42,7 +42,7 @@ def run():
     else:
         print("\nInvalid input was recieved.\nExiting...")
         return
-    query = input("Great, please enter your search query: ")
+    query = input("Please enter your search query: ")
 
 
 if __name__ == "__main__":

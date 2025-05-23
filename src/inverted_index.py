@@ -2,7 +2,7 @@
 inverted_index.py contains the InvertedIndex data structure
 """
 from pathlib import Path
-from os import listdir, rename, remove
+from os import listdir, remove, path, makedirs
 from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning, MarkupResemblesLocatorWarning
 import warnings
 from nltk.stem import PorterStemmer
@@ -39,8 +39,8 @@ class InvertedIndex:
     
     def incrementDocuments(self):
         self._num_documents += 1
-    
-    def merge_two_indices(self, file1, file2, output_file):
+
+    def mergeTwoIndicies(self, file1, file2, output_file):
         """
         Merges two partial index JSON files and writes the merged result to output_file.
         """
@@ -83,14 +83,8 @@ class InvertedIndex:
             merged_index[token2] = postings2
             j += 1
 
-        with open(output_file, 'w') as outputFile:
-            # CAN ADD RANGES HERE LATER USING A FOR LOOP TO CREATE AND DUMP
-            # MULTIPLE DIFFERENT SUB-INDICIES
-            # merged_index_items = merged_index.items()
-            # for token, postings in merged_index_items:
-            #     if token.startswith("a"):
-            #         a[token] = postings
-            json.dump(merged_index, outputFile)
+        with open(output_file, 'w') as out:
+            json.dump(merged_index, out)
 
     def mergePartialIndices(self) -> None:
         """
@@ -117,9 +111,35 @@ class InvertedIndex:
             partial_indicies.append(merged_filename)
             partial_indicies.sort()
 
-        # Renames the final merged file
         if partial_indicies:
-            rename(partial_indicies[0], "full_inverted_index.json")
+            final_index_file = partial_indicies[0]
+
+            # Loads the final merged index into memory
+            with open(final_index_file, 'r') as f:
+                merged_index = json.load(f)
+            remove(final_index_file)
+
+            # Distributes into index_ranges/X.json
+            if not path.exists("index_ranges"):
+                makedirs("index_ranges")
+
+            ranges = {}
+            for token, postings in merged_index.items():
+                first_char = token[0].lower()
+                if first_char.isdigit():
+                    range = "0-9"
+                elif first_char.isalpha():
+                    range = first_char
+                else:
+                    range = "other"
+
+                if range not in ranges:
+                    ranges[range] = {}
+                ranges[range][token] = postings
+
+            for range, range_index_data in ranges.items():
+                with open(f"index_ranges/{range}.json", 'w') as outputFile:
+                    json.dump(range_index_data, outputFile)
     
     def dumpPartialIndex(self) -> None:
         self._num_dumps += 1
@@ -246,12 +266,12 @@ class InvertedIndex:
 
         text_cache = set()
         token_cache = []
-        # count = 0
+        count = 0
         for subdomain in subdomains_iterable:
-            # if count > 6: break
-            # print(subdomain)
+            if count > 3: break
+            print(subdomain)
             self.parse_subdomain(subdomain, text_cache, token_cache)
-            # count += 1
+            count += 1
 
         self.dumpPartialIndex() # Puts the remainder of the inverted index into a new file
 
