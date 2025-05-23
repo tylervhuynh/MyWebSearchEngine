@@ -102,7 +102,7 @@ class InvertedIndex:
             index2 = partial_indicies.pop(0)
 
             merged_filename = f"temp_merged{temp_index_count}.json"
-            self.merge_two_indices(index1, index2, merged_filename)
+            self.mergeTwoIndicies(index1, index2, merged_filename)
             temp_index_count += 1
 
             remove(index1)
@@ -266,12 +266,12 @@ class InvertedIndex:
 
         text_cache = set()
         token_cache = []
-        count = 0
+        # count = 0
         for subdomain in subdomains_iterable:
-            if count > 3: break
-            print(subdomain)
+            # if count > 3: break
+            # print(subdomain)
             self.parse_subdomain(subdomain, text_cache, token_cache)
-            count += 1
+            # count += 1
 
         self.dumpPartialIndex() # Puts the remainder of the inverted index into a new file
 

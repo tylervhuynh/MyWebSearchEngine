@@ -1,5 +1,6 @@
 from inverted_index import InvertedIndex
 from pathlib import Path
+from os import listdir
 from time import time
 
 CORPUS_PATH = "DEV"
@@ -16,9 +17,10 @@ def generate_report(inverted_index: InvertedIndex, length: float) -> None:
         report_file.write("Number of unique tokens: " + str(inverted_index.getNumUniqueTokens()) + '\n\n')
 
         index_byte_count = 0
-        for i in range(0, inverted_index.getNumDumps()):
-            file_path = Path(f"full_inverted_index.json")
-            if file_path.exists():
+        index_ranges_directory = Path("index_ranges")
+        for filename in listdir(index_ranges_directory):
+            file_path = index_ranges_directory / filename
+            if file_path.is_file() and filename.endswith(".json"):
                 index_byte_count += file_path.stat().st_size
         report_file.write(f"Index size on disk: {str(index_byte_count / 1024)} KB ({str(index_byte_count)} bytes)\n")
 
