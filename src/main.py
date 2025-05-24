@@ -7,11 +7,11 @@ from time import time
 CORPUS_PATH = "DEV"
 
 
-def generate_report(inverted_index: InvertedIndex, length: float) -> None:
+def generate_index_report(inverted_index: InvertedIndex, length: float) -> None:
     """
-    Collects analytics from InvertedIndex into a report.txt file
+    Collects analytics from InvertedIndex into an indexing_report.txt file
     """
-    with open("report.txt", 'w', encoding="UTF-8") as report_file:
+    with open("indexing_index_report.txt", 'w', encoding="UTF-8") as report_file:
         report_file.write("Inverted Index indexing report:\n\n")
         report_file.write("Index creation took " + str(length) + " seconds\n")
         report_file.write("Number of indexed documents: " + str(inverted_index.getNumDocuments()) + '\n\n')
@@ -32,15 +32,25 @@ def runIndexCorpus() -> None:
     inverted_index.create_index(CORPUS_PATH)
     end = time()
     length = end - start
-    generate_report(inverted_index, length)
+    print("\nCompleted indexing\n")
+    generate_index_report(inverted_index, length)
 
 
-def runSearch(query: str) -> None:
+def generate_search_report(length: float) -> None:
+    """
+    Collects analytics from searching, writing it into a searching_report.txt file
+    """
+    with open("searching_report.txt", 'w', encoding="UTF-8") as report_file:
+        report_file.write("Searching report:\n\n")
+        report_file.write("Searching took " + str(length) + " seconds\n")
+
+
+def runSearch(query: str) -> list:
     urls = retrieveURLs(query)
     if len(urls) > 0:
-        print("\nURLS FOUND:\n")
+        print("\nURLS FOUND:")
         for i in range(min(len(urls), 5)):
-            print(f"{i + 1}: {urls[i]})")
+            print(f"{i + 1}: {urls[i]}")
     else:
         print("\nNO URLS FOUND:\n")
 
@@ -48,21 +58,22 @@ def runSearch(query: str) -> None:
 def runUserInterface() -> str | None:
     user_answer = input("\nHello there!\n\nWelcome to MyWebSearchEngine!\n\nWould you like to initialize the corpus? (y/n) ")
     if user_answer.lower() == 'n':
-        print("\nGreat, you chose \'n\' to JUMP RIGHT INTO SEARCHING!\n")
+        print("\nGreat, you chose \'n\' to JUMP RIGHT INTO SEARCHING!")
     elif user_answer.lower() == 'y':
-        print("\nGreat, you chose \'y\' to INITIALIZE THE CORPUS\n\nBeginning Initialization...")
+        print("\nGreat, you chose \'y\' to INITIALIZE THE CORPUS\n\nBeginning initialization...")
         runIndexCorpus()
     else:
         print("\nInvalid input was recieved.\nExiting...")
         return None
 
-    query = input("Please enter your search query: ")
-
-    start = time()
-    runSearch(query)
-    end = time()
-    length = end - start
-    print("\nTook", str(length), "seconds to search.")
+    while True:
+        query = input("\nPlease enter your search query (or type 'exit' to quit): ")
+        if query.lower() == 'exit':
+            break
+        start = time()
+        runSearch(query)
+        end = time()
+        # generate_search_report(end - start)
 
 
 def run():

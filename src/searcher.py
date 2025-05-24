@@ -5,7 +5,7 @@ from pathlib import Path
 import json
 
 
-def fetchPostings(term: str) -> list[int]:
+def fetchPostings(term: str) -> set[int]:
     """
     Fetches the postings for the given term by navigating to the
     corresponding Inverted Index range json file and hunting down
@@ -58,6 +58,7 @@ def retrieveURLs(query: str) -> list[str]:
     # Translates the retrieved document IDs to URLs
     retrievedURLs = []
     for docID in retrievedDocIDs:
-        url = docIDMap[str(docID)]
-        retrievedURLs.append(url)
+        url = docIDMap.get(str(docID))
+        if url:
+            retrievedURLs.append(url)
     return retrievedURLs
