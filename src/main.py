@@ -1,4 +1,5 @@
 from inverted_index import InvertedIndex
+from searcher import retrieveURLs
 from pathlib import Path
 from os import listdir
 from time import time
@@ -34,7 +35,11 @@ def runIndexCorpus() -> None:
     generate_report(inverted_index, length)
 
 
-def run():
+def runSearch(query: str) -> None:
+    retrieveURLs(query)
+
+
+def runUserInterface() -> str | None:
     user_answer = input("\nHello there!\n\nWelcome to MyWebSearchEngine!\n\nWould you like to initialize the corpus? (y/n) ")
     if user_answer.lower() == 'n':
         print("\nGreat, you chose \'n\' to JUMP RIGHT INTO SEARCHING!\n")
@@ -43,8 +48,14 @@ def run():
         runIndexCorpus()
     else:
         print("\nInvalid input was recieved.\nExiting...")
-        return
-    query = input("Please enter your search query: ")
+        return None
+
+    # query = input("Please enter your search query: ")
+    # runSearch(query)
+
+
+def run():
+    runUserInterface()
 
 
 if __name__ == "__main__":

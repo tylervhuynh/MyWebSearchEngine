@@ -245,6 +245,10 @@ class InvertedIndex:
             if webpage.is_file():
                 self.parse_file(str(webpage), text_cache, token_cache)
     
+    def dumpDocIDMap(self):
+        with open("document_id_map.json", 'w') as docIDFile:
+            json.dump(self.getDocIDMap(), docIDFile)
+
     def create_index(self, path_to_corpus: str) -> None:
         """
         create_index() develops the inverted index by iterating through subdomains and their 
@@ -276,3 +280,5 @@ class InvertedIndex:
         self.dumpPartialIndex() # Puts the remainder of the inverted index into a new file
 
         self.mergePartialIndices() # Merges all partial index files
+
+        self.dumpDocIDMap() # Dumps the Document ID mapping to a file
