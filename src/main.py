@@ -36,7 +36,13 @@ def runIndexCorpus() -> None:
 
 
 def runSearch(query: str) -> None:
-    retrieveURLs(query)
+    urls = retrieveURLs(query)
+    if len(urls) > 0:
+        print("\nURLS FOUND:\n")
+        for i in range(min(len(urls), 5)):
+            print(f"{i + 1}: {urls[i]})")
+    else:
+        print("\nNO URLS FOUND:\n")
 
 
 def runUserInterface() -> str | None:
@@ -50,8 +56,13 @@ def runUserInterface() -> str | None:
         print("\nInvalid input was recieved.\nExiting...")
         return None
 
-    # query = input("Please enter your search query: ")
-    # runSearch(query)
+    query = input("Please enter your search query: ")
+
+    start = time()
+    runSearch(query)
+    end = time()
+    length = end - start
+    print("\nTook", str(length), "seconds to search.")
 
 
 def run():
