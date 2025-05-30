@@ -1,3 +1,5 @@
+import tkinter as tk
+from tkinter import messagebox, scrolledtext
 from inverted_index import InvertedIndex
 from searcher import retrieveURLs
 from pathlib import Path
@@ -44,35 +46,63 @@ def generate_search_report(query: str, length: float) -> None:
         report_file.write(f"Searching the query \"{query}\" took " + str(length) + " seconds\n")
 
 
-def runSearch(query: str) -> list:
-    urls = retrieveURLs(query)
-    if len(urls) > 0:
-        print("\nURLS FOUND:")
-        for i in range(min(len(urls), 5)):
-            print(f"{i + 1}: {urls[i]}")
-    else:
-        print("\nNO URLS FOUND:\n")
+class SearchGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("MyWebSearchEngine")
+
+        # Creates the title label
+        tk.Label(root, text="Welcome to MyWebSearchEngine!", font=("Helvetica", 22, "bold")).pack(pady=10)
+
+        # Creates the query entry box
+        self.query_entry = tk.Entry(root, width=50)
+        self.query_entry.pack(pady=5)
+
+        # Creats the search button
+        self.search_button = tk.Button(root, text="Search", command=self.perform_search)
+        self.search_button.pack(pady=5)
+
+        # Creates the results display
+        self.results_display = scrolledtext.ScrolledText(root, width=80, height=10, wrap=tk.WORD)
+        self.results_display.pack(padx=10, pady=10)
+
+    def perform_search(self):
+        query = self.query_entry.get().strip()
+        if not query:
+            messagebox.showwarning("Warning", "Please enter a query.")
+            return
+        start = time()
+        urls = retrieveURLs(query)
+        end = time()
+        generate_search_report(query, end - start)
+        self.results_display.delete(1.0, tk.END)
+        if len(urls) > 0:
+            self.results_display.insert(tk.END, f"Found {len(urls)} result(s):\n\n")
+            for i in range(min(len(urls), 5)):
+                self.results_display.insert(tk.END, f"{i + 1}. {urls[i]}\n")
+        else:
+            self.results_display.insert(tk.END, "No URLs found for your query.\n")
+
+
+def main():
+    root = tk.Tk()
+    app = SearchGUI(root)
+    root.mainloop()
 
 
 def runUserInterface() -> str | None:
     user_answer = input("\nHello there!\n\nWelcome to MyWebSearchEngine!\n\nWould you like to initialize the corpus? (y/n) ")
     if user_answer.lower() == 'n':
-        print("\nGreat, you chose \'n\' to JUMP RIGHT INTO SEARCHING!")
+        print("\nGreat, you chose \'n\' to jump right into searching!")
+        print("Lauching GUI...")
     elif user_answer.lower() == 'y':
-        print("\nGreat, you chose \'y\' to INITIALIZE THE CORPUS\n\nBeginning initialization...")
+        print("\nGreat, you chose \'y\' to initalize the corpus!\n\nBeginning initialization...")
         runIndexCorpus()
     else:
         print("\nInvalid input was recieved.\nExiting...")
         return None
 
-    while True:
-        query = input("\nPlease enter your search query (or type 'exit' to quit): ")
-        if query.lower() == 'exit':
-            break
-        start = time()
-        runSearch(query)
-        end = time()
-        generate_search_report(query, end - start)
+    main() # Begins the GUI
 
 
 def run():

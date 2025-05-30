@@ -286,12 +286,12 @@ class InvertedIndex:
 
         text_cache = set()
         token_cache = []
-        # count = 0
+        count = 0
         for subdomain in subdomains_iterable:
-            # if count > 3: break
-            # print(subdomain)
+            if count > 3: break
+            print(subdomain)
             self.parse_subdomain(subdomain, text_cache, token_cache)
-            # count += 1
+            count += 1
 
         self.dumpPartialIndex() # Puts the remainder of the inverted index into a new file
 
