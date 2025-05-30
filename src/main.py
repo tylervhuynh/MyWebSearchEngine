@@ -50,12 +50,13 @@ class SearchGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("MyWebSearchEngine")
+        self.root.configure(bg="white")
 
         # Creates the title label
-        tk.Label(root, text="Welcome to MyWebSearchEngine!", font=("Helvetica", 22, "bold")).pack(pady=10)
+        tk.Label(root, text="Welcome to MyWebSearchEngine!", font=("Helvetica", 22, "bold"), bg="white", fg="blue").pack(pady=10)
 
         # Creates the query entry box
-        self.query_entry = tk.Entry(root, width=50)
+        self.query_entry = tk.Entry(root, width=50, bg="white", fg="red")
         self.query_entry.pack(pady=5)
 
         # Creats the search button
@@ -63,7 +64,7 @@ class SearchGUI:
         self.search_button.pack(pady=5)
 
         # Creates the results display
-        self.results_display = scrolledtext.ScrolledText(root, width=80, height=10, wrap=tk.WORD)
+        self.results_display = scrolledtext.ScrolledText(root, width=80, height=10, wrap=tk.WORD, bg="white", fg="blue")
         self.results_display.pack(padx=10, pady=10)
 
     def perform_search(self):
