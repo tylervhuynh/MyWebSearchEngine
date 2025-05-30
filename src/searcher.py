@@ -14,6 +14,8 @@ def fetchPostings(term: str) -> set[int]:
     """
     postings = []
     first_char = term[0]
+    if first_char.isdigit():
+        first_char = "0-9"
     index_path = Path(f"index_ranges/{first_char}.json")
     if index_path.exists():
         with open(index_path, 'r') as indexFile:
@@ -57,8 +59,11 @@ def retrieveURLs(query: str) -> list[str]:
 
     # Translates the retrieved document IDs to URLs
     retrievedURLs = []
+    counter = 0
     for docID in retrievedDocIDs:
+        if counter > 4: break
         url = docIDMap.get(str(docID))
         if url:
             retrievedURLs.append(url)
+        counter += 1
     return retrievedURLs

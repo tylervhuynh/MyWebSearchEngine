@@ -36,13 +36,12 @@ def runIndexCorpus() -> None:
     generate_index_report(inverted_index, length)
 
 
-def generate_search_report(length: float) -> None:
+def generate_search_report(query: str, length: float) -> None:
     """
     Collects analytics from searching, writing it into a searching_report.txt file
     """
-    with open("searching_report.txt", 'w', encoding="UTF-8") as report_file:
-        report_file.write("Searching report:\n\n")
-        report_file.write("Searching took " + str(length) + " seconds\n")
+    with open("searching_report.txt", 'a', encoding="UTF-8") as report_file:
+        report_file.write(f"Searching the query \"{query}\" took " + str(length) + " seconds\n")
 
 
 def runSearch(query: str) -> list:
@@ -73,7 +72,7 @@ def runUserInterface() -> str | None:
         start = time()
         runSearch(query)
         end = time()
-        # generate_search_report(end - start)
+        generate_search_report(query, end - start)
 
 
 def run():

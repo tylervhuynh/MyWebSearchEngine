@@ -123,6 +123,7 @@ class InvertedIndex:
             if not path.exists("index_ranges"):
                 makedirs("index_ranges")
 
+            # Splits index into ranges after merging, as explained in project write up
             ranges = {}
             for token, postings in merged_index.items():
                 first_char = token[0].lower()
@@ -151,13 +152,13 @@ class InvertedIndex:
             json.dump(serializable_buffer, partial_index)
             self._buffer.clear() # Clears out buffer after having stored its contents
     
-    def add_posting(self, token: str, frequency: int, document_id: int) -> None:
+    def add_posting(self, token: str, frequency: int, document_id: int, important: bool = False) -> None:
         """
-        Creates a new Posting object out of the token, frequency, and document ID
+        Creates a new Posting object out of the token, frequency, document ID, and importance
         and adds it to the inverted index
         """
-        new_posting = Posting(document_id, frequency)
-        if token in self._buffer.keys():
+        new_posting = Posting(document_id, frequency, important)
+        if token in self._buffer:
             self._buffer[token].append(new_posting)
         else:
             self.incrementUniqueTokens()
@@ -199,8 +200,23 @@ class InvertedIndex:
         stemmer = PorterStemmer()
         stemmed_tokens = [stemmer.stem(token) for token in token_list]
         token_frequencies = compute_word_frequencies(stemmed_tokens)
+
+        # Extracts tokens from important tags
+        important_tags = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'b', 'strong'])
+        important_text_parts = []
+        for tag in important_tags:
+            tag_text = tag.get_text()
+            important_text_parts.append(tag_text)
+        important_text = ' '.join(important_text_parts)
+        important_tokens = tokenize(important_text)
+        important_stemmed = {stemmer.stem(token) for token in important_tokens}
+
+        # Adds postings with importance flag
         for token, frequency in token_frequencies.items():
-            self.add_posting(token, frequency, document_id)
+            is_important = token in important_stemmed
+            self.add_posting(token, frequency, document_id, is_important)
+            for token, frequency in token_frequencies.items():
+                self.add_posting(token, frequency, document_id)
 
         # Determines if a partial index must be stored on disk
         if self.getNumDocuments() % 27000 == 0:
