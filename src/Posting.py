@@ -18,8 +18,11 @@ class Posting:
     def getImportant(self) -> bool:
         return self._important
     
-    def getTfIdf(self) -> int:
+    def getTfIdf(self) -> float:
         return self._tf_idf
     
+    def setTfIdf(self, new_tf_idf: float) -> None:
+        self._tf_idf = new_tf_idf
+
     def to_dict(self):
         return {"document_ID": self._documentID, "term_frequency": self._term_frequency, "important": self._important, "tf_idf": self._tf_idf}

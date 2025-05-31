@@ -2,6 +2,7 @@
 inverted_index.py contains the InvertedIndex data structure
 """
 from pathlib import Path
+from math import log
 from os import listdir, remove, path, makedirs
 from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning, MarkupResemblesLocatorWarning
 import warnings
@@ -144,13 +145,26 @@ class InvertedIndex:
     
     def dumpPartialIndex(self) -> None:
         self._num_dumps += 1
+        N = 55393 # Stores the N number of documents in the index
         sorted_dict = dict(sorted(self._buffer.items()))
         serializable_buffer = {}
         for term, postings in sorted_dict.items():
-            serializable_buffer[term] = [posting.to_dict() for posting in postings]
+            document_frequency = len(postings)
+            idf = 0
+            if document_frequency != 0: 
+                idf = log(N / document_frequency)
+            term_postings = []
+            for posting in postings:
+                term_frequency = posting.getTermFrequency()
+                tf_weight = 0
+                if term_frequency > 0:
+                    tf_weight = (1 + log(term_frequency))
+                posting.setTfIdf(tf_weight * idf)
+                term_postings.append(posting.to_dict())
+            serializable_buffer[term] = term_postings
         with open(f"partial_index{self._num_dumps}.json", 'w') as partial_index:
             json.dump(serializable_buffer, partial_index)
-            self._buffer.clear() # Clears out buffer after having stored its contents
+        self._buffer.clear() # Clears out buffer after having stored its contents
     
     def add_posting(self, token: str, frequency: int, document_id: int, important: bool = False) -> None:
         """
@@ -215,8 +229,6 @@ class InvertedIndex:
         for token, frequency in token_frequencies.items():
             is_important = token in important_stemmed
             self.add_posting(token, frequency, document_id, is_important)
-            for token, frequency in token_frequencies.items():
-                self.add_posting(token, frequency, document_id)
 
         # Determines if a partial index must be stored on disk
         if self.getNumDocuments() % 27000 == 0:
@@ -286,12 +298,12 @@ class InvertedIndex:
 
         text_cache = set()
         token_cache = []
-        count = 0
+        # count = 0
         for subdomain in subdomains_iterable:
-            if count > 3: break
-            print(subdomain)
+            # if count > 3: break
+            # print(subdomain)
             self.parse_subdomain(subdomain, text_cache, token_cache)
-            count += 1
+            # count += 1
 
         self.dumpPartialIndex() # Puts the remainder of the inverted index into a new file
 

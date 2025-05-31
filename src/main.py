@@ -46,7 +46,7 @@ def generate_search_report(query: str, length: float) -> None:
         report_file.write(f"Searching the query \"{query}\" took " + str(length) + " seconds\n")
 
 
-class SearchGUI:
+class SearchEngineGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("MyWebSearchEngine")
@@ -87,7 +87,7 @@ class SearchGUI:
 
 def main():
     root = tk.Tk()
-    app = SearchGUI(root)
+    app = SearchEngineGUI(root)
     root.mainloop()
 
 
@@ -103,7 +103,7 @@ def runUserInterface() -> str | None:
         print("\nInvalid input was recieved.\nExiting...")
         return None
 
-    main() # Begins the GUI
+    # main() # Begins the GUI
 
 
 def run():
