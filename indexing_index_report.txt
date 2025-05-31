@@ -1,0 +1,8 @@
+Inverted Index indexing report:
+
+Index creation took 1182.7163548469543 seconds
+Number of indexed documents: 55393
+
+Number of unique tokens: 317757
+
+Index size on disk: 841402.3603515625 KB (861596017 bytes)

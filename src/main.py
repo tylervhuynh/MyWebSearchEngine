@@ -48,6 +48,12 @@ def generate_search_report(query: str, length: float) -> None:
 
 
 class SearchEngineGUI:
+    global term_to_file_map
+    term_to_file_path = Path("term_to_file_map.json")
+    if term_to_file_path.exists():
+        with open(term_to_file_path, "r") as mapFile:
+            term_to_file_map = json.load(mapFile)
+
     def __init__(self, root):
         self.root = root
         self.root.title("MyWebSearchEngine")
@@ -97,11 +103,6 @@ def runUserInterface() -> str | None:
     if user_answer.lower() == 'n':
         print("\nGreat, you chose \'n\' to jump right into searching!")
         print("Lauching GUI...")
-        global term_to_file_map
-        term_to_file_path = Path("term_to_file_map.json")
-        if term_to_file_path.exists():
-            with open(term_to_file_path, "r") as mapFile:
-                term_to_file_map = json.load(mapFile)
     elif user_answer.lower() == 'y':
         print("\nGreat, you chose \'y\' to initalize the corpus!\n\nBeginning initialization...")
         runIndexCorpus()

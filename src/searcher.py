@@ -5,7 +5,7 @@ from pathlib import Path
 import json
 
 
-def fetchPostings(term: str) -> set[int]:
+def fetchPostings(term: str, term_to_file_map: dict) -> list[int]:
     """
     Fetches the postings for the given term by navigating to the
     corresponding Inverted Index range json file and hunting down
@@ -13,10 +13,10 @@ def fetchPostings(term: str) -> set[int]:
     is not found
     """
     postings = []
-    first_char = term[0]
-    if first_char.isdigit():
-        first_char = "0-9"
-    index_path = Path(f"index_ranges/{first_char}.json")
+    file_name = term_to_file_map.get(term)
+    if file_name == None:
+        return postings
+    index_path = Path(f"index_ranges/{file_name}")
     if index_path.exists():
         with open(index_path, 'r') as indexFile:
             try:
@@ -42,7 +42,7 @@ def parseQueryTerms(query: str) -> list:
     return stemmed_terms
 
 
-def retrieveURLs(query: str) -> list[str]:
+def retrieveURLs(query: str, term_to_file_map: dict) -> list[str]:
     queryTerms = parseQueryTerms(query)
     numQueryTerms = len(queryTerms)
     if numQueryTerms < 1:
@@ -50,7 +50,7 @@ def retrieveURLs(query: str) -> list[str]:
     
     term_postings = []
     for term in queryTerms:
-        postings = fetchPostings(term)
+        postings = fetchPostings(term, term_to_file_map)
         if len(postings) == 0:
             return []
         term_postings.append(postings)
