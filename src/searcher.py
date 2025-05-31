@@ -22,7 +22,7 @@ def fetchPostings(term: str) -> set[int]:
             try:
                 index = json.load(indexFile)
                 # Returns the postings (only their docIDs), which can be altered later
-                return set(posting["document_ID"] for posting in index[term])
+                return index[term] 
             except KeyError:
                 return postings
     return postings
@@ -47,23 +47,61 @@ def retrieveURLs(query: str) -> list[str]:
     numQueryTerms = len(queryTerms)
     if numQueryTerms < 1:
         return []
+    
+    term_postings = []
+    for term in queryTerms:
+        postings = fetchPostings(term)
+        if len(postings) == 0:
+            return []
+        term_postings.append(postings)
 
-    # Intersects docIDs to AND all query terms
-    retrievedDocIDs = fetchPostings(queryTerms[0])
-    for term in queryTerms[1:]:
-        retrievedDocIDs &= fetchPostings(term)
+    # Gets the common docIDs
+    common_doc_ids = set()
+    for posting in term_postings[0]:
+        common_doc_ids.add(posting['document_ID'])
 
-    # Loads in the {document id: URL} mapping
+    for postings in term_postings[1:]:
+        current_ids = set()
+        for posting in postings:
+            current_ids.add(posting['document_ID'])
+        common_doc_ids = common_doc_ids.intersection(current_ids)
+
+    if len(common_doc_ids) == 0:
+        return []
+
+    # Adds up the tf-idf scores for common docIDs
+    doc_scores = {}
+    for postings in term_postings:
+        for posting in postings:
+            doc_id = posting['document_ID']
+            if doc_id in common_doc_ids:
+                if doc_id not in doc_scores:
+                    doc_scores[doc_id] = 0
+                doc_scores[doc_id] += posting['tf_idf']
+
+    # Sorts the docIDs by tf-idf scores in a general "max element" sorting fashion
+    sorted_docids = []
+    while len(doc_scores) > 0:
+        max_doc = None
+        max_score = -1
+        for doc_id in doc_scores:
+            if doc_scores[doc_id] > max_score:
+                max_score = doc_scores[doc_id]
+                max_doc = doc_id
+        sorted_docids.append(max_doc)
+        del doc_scores[max_doc]
+        if len(sorted_docids) == 5:
+            break
+
+    # Loads the docID to URL map
     with open("document_id_map.json", 'r') as docIDMapFile:
-        docIDMap = json.load(docIDMapFile)
+        doc_id_map = json.load(docIDMapFile)
 
-    # Translates the retrieved document IDs to URLs
-    retrievedURLs = []
-    counter = 0
-    for docID in retrievedDocIDs:
-        if counter > 4: break
-        url = docIDMap.get(str(docID))
-        if url:
-            retrievedURLs.append(url)
-        counter += 1
-    return retrievedURLs
+    # Builds the final list of URLs
+    result_urls = []
+    for doc_id in sorted_docids:
+        doc_id_str = str(doc_id)
+        if doc_id_str in doc_id_map:
+            result_urls.append(doc_id_map[doc_id_str])
+
+    return result_urls
