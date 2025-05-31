@@ -126,22 +126,25 @@ class InvertedIndex:
 
             # Splits index into ranges after merging, as explained in project write up
             ranges = {}
+            term_to_file_map = {}  # Creates a new term to file mapping for faster search
             for token, postings in merged_index.items():
-                first_char = token[0].lower()
-                if first_char.isdigit():
+                range = token[:2].lower()
+                if range == None:
+                    range = "other"
+                elif range[0].isdigit():
                     range = "0-9"
-                elif first_char.isalpha():
-                    range = first_char
-                else:
+                elif not range[0].isalpha():
                     range = "other"
 
                 if range not in ranges:
                     ranges[range] = {}
                 ranges[range][token] = postings
-
+                term_to_file_map[token] = f"{range}.json"
             for range, range_index_data in ranges.items():
                 with open(f"index_ranges/{range}.json", 'w') as outputFile:
                     json.dump(range_index_data, outputFile)
+            with open("term_to_file_map.json", "w") as term_to_file_map_file:
+                json.dump(term_to_file_map, term_to_file_map_file)
     
     def dumpPartialIndex(self) -> None:
         self._num_dumps += 1

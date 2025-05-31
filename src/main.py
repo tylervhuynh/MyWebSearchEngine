@@ -5,6 +5,7 @@ from searcher import retrieveURLs
 from pathlib import Path
 from os import listdir
 from time import time
+import json
 
 CORPUS_PATH = "DEV"
 
@@ -73,7 +74,7 @@ class SearchEngineGUI:
             messagebox.showwarning("Warning", "Please enter a query.")
             return
         start = time()
-        urls = retrieveURLs(query)
+        urls = retrieveURLs(query, term_to_file_map)
         end = time()
         generate_search_report(query, end - start)
         self.results_display.delete(1.0, tk.END)
@@ -96,6 +97,11 @@ def runUserInterface() -> str | None:
     if user_answer.lower() == 'n':
         print("\nGreat, you chose \'n\' to jump right into searching!")
         print("Lauching GUI...")
+        global term_to_file_map
+        term_to_file_path = Path("term_to_file_map.json")
+        if term_to_file_path.exists():
+            with open(term_to_file_path, "r") as mapFile:
+                term_to_file_map = json.load(mapFile)
     elif user_answer.lower() == 'y':
         print("\nGreat, you chose \'y\' to initalize the corpus!\n\nBeginning initialization...")
         runIndexCorpus()
