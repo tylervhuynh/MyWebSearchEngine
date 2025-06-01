@@ -22,7 +22,7 @@ def fetchPostings(term: str, term_to_file_map: dict) -> list[int]:
             try:
                 index = json.load(indexFile)
                 # Returns the postings (only their docIDs), which can be altered later
-                return index[term] 
+                return index[term]
             except KeyError:
                 return postings
     return postings

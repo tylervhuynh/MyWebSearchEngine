@@ -129,12 +129,14 @@ class InvertedIndex:
             term_to_file_map = {}  # Creates a new term to file mapping for faster search
             for token, postings in merged_index.items():
                 range = token[:2].lower()
-                if range == None:
+                if not range:
                     range = "other"
                 elif range[0].isdigit():
-                    range = "0-9"
+                    range = range[0]
                 elif not range[0].isalpha():
                     range = "other"
+                else:
+                    range = range
 
                 if range not in ranges:
                     ranges[range] = {}
