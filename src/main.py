@@ -110,7 +110,7 @@ def runUserInterface() -> str | None:
         print("\nInvalid input was recieved.\nExiting...")
         return None
 
-    main() # Begins the GUI
+    # main() # Begins the GUI
 
 
 def run():

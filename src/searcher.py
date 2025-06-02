@@ -5,7 +5,7 @@ from pathlib import Path
 import json
 
 
-def fetchPostings(term: str, term_to_file_map: dict) -> list[int]:
+def fetchPostings(term: str, term_to_file_map: dict, loaded_files: dict) -> list[int]:
     """
     Fetches the postings for the given term by navigating to the
     corresponding Inverted Index range json file and hunting down
@@ -16,19 +16,17 @@ def fetchPostings(term: str, term_to_file_map: dict) -> list[int]:
     file_name = term_to_file_map.get(term)
     if file_name == None:
         return postings
-    index_path = Path(f"index_ranges/{file_name}")
-    if index_path.exists():
+    # Uses cache of loaded files to prevent some opening of json files
+    if file_name not in loaded_files:
+        index_path = Path(f"index_ranges/{file_name}")
+        if not index_path.exists():
+            return postings
         with open(index_path, 'r') as indexFile:
-            try:
-                index = json.load(indexFile)
-                # Returns the postings (only their docIDs), which can be altered later
-                return index[term]
-            except KeyError:
-                return postings
-    return postings
+            loaded_files[file_name] = json.load(indexFile)
+    return loaded_files[file_name].get(term, [])
 
 
-def parseQueryTerms(query: str) -> list:
+def parseQueryTerms(query: str) -> set:
     """
     Parses the query by stripping it and making it lowecased,
     then stemming the terms, returning the list of parsed terms
@@ -38,7 +36,7 @@ def parseQueryTerms(query: str) -> list:
     # Tokenizes and stems the query
     query_tokens = tokenize(whole_query)
     stemmer = PorterStemmer()
-    stemmed_terms = [stemmer.stem(term) for term in query_tokens]
+    stemmed_terms = set(stemmer.stem(term) for term in query_tokens)
     return stemmed_terms
 
 
@@ -49,27 +47,28 @@ def retrieveURLs(query: str, term_to_file_map: dict) -> list[str]:
         return []
     
     term_postings = []
+    loaded_files = {}
     for term in queryTerms:
-        postings = fetchPostings(term, term_to_file_map)
+        postings = fetchPostings(term, term_to_file_map, loaded_files)
         if len(postings) == 0:
             return []
         term_postings.append(postings)
 
     # Gets the common docIDs
-    common_doc_ids = set()
+    common_doc_ids = set() # Holds all docIDs in a set (for ease of intersecting)
     for posting in term_postings[0]:
         common_doc_ids.add(posting['document_ID'])
 
-    for postings in term_postings[1:]:
+    for postings in term_postings[1:]: # Goes through postings, adding them to a current set that will be intersected
         current_ids = set()
         for posting in postings:
             current_ids.add(posting['document_ID'])
-        common_doc_ids = common_doc_ids.intersection(current_ids)
+        common_doc_ids = common_doc_ids.intersection(current_ids) # Intersects (ANDs) common docIDs
 
     if len(common_doc_ids) == 0:
         return []
 
-    # Adds up the tf-idf scores for common docIDs
+    # Adds up all the tf-idf scores for common docIDs
     doc_scores = {}
     for postings in term_postings:
         for posting in postings:
